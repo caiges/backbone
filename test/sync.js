@@ -157,19 +157,24 @@ $(document).ready(function() {
 
 	test("Asynchronous and synchronous Backbone.ajax method should fire 'request' event before the 'sync' event.", function() {
 		var collection = new Backbone.Collection;
-		var requestEventFired = false;
-
 		collection.url = '/test';
+		var requestEventFired = false;
+		var deferred = $.Deferred();
+		var ajax = Backbone.ajax;
+
 		Backbone.ajax = function(settings){
-			return settings.success();
+			deferred.done(settings.success);
+			deferred.resolve();
+			Backbone.ajax = ajax;
+			return deferred.promise();
 		};
 
 		collection.on('request', function() {
-			ok(!requestEventFired, "request fired in order");
+			equal(requestEventFired, false, "request fired in order");
 			requestEventFired = true;
 		});
 		collection.on('sync', function() {
-			ok(requestEventFired, "sync fired in order");
+			equal(requestEventFired, true, "sync fired in order");
 		});
 		collection.fetch();
 	});
